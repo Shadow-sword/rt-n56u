@@ -410,6 +410,7 @@ elif [ "$TPROXY" = 2 ]; then
 	: ${LOCAL_PORT:?"You must assign a port for the udp relay server."}
 fi
 
+sysctl -w net.ipv4.ip_forward=1
 flush_r && fw_rule && ipset_r && ac_rule && tp_rule && gen_include
 [ "$?" = 0 ] || loger 3 "Start failed!"
 exit $?

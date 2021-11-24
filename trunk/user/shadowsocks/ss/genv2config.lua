@@ -8,7 +8,6 @@ local servertmp = ssrindext:read("*all")
 local server = cjson.decode(servertmp)
 local v2ray = {
 log = {
-	-- error = "/var/ssrplus.log",
 	loglevel = "warning"
 },
 	-- 传入连接
@@ -36,8 +35,9 @@ log = {
 		}
 	} or nil,
 	-- 传出连接
-	outbound = {
-		protocol = "vmess",
+	outbounds = {{
+		tag = "proxy",
+		protocol = "vless",
 		settings = {
 			vnext = {
 				{
@@ -47,7 +47,9 @@ log = {
 						{
 							id = server.vmess_id,
 							alterId = tonumber(server.alter_id),
-							security = server.security
+							security = server.security,
+							flow = "xtls-rprx-splice",
+							encryption = "none"
 						}
 					}
 				}
@@ -56,8 +58,8 @@ log = {
 	-- 底层传输配置
 		streamSettings = {
 			network = server.transport,
-			security = (server.tls == '1') and "tls" or "none",
-			tlsSettings = {allowInsecure = (server.insecure ~= "0") and true or false,serverName=server.tls_host,},
+			security = (server.tls == '1') and "xtls" or "none",
+			xtlsSettings = {allowInsecure = (server.insecure ~= "0") and true or false,serverName=server.tls_host,},
 		tcpSettings = (server.transport == "tcp") and {
 			header = {
 				type = server.tcp_guise,
@@ -103,16 +105,7 @@ log = {
 			enabled = (server.mux == "1") and true or false,
 			concurrency = tonumber(server.concurrency)
 		}
-	},
-
-	-- 额外传出连接
-	outboundDetour = {
-		{
-			protocol = "freedom",
-			tag = "direct",
-			settings = { keep = "" }
-		}
-	}
+	}}
 }
 
 print(cjson.encode(v2ray))
