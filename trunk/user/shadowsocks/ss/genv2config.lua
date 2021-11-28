@@ -37,7 +37,7 @@ log = {
 	-- 传出连接
 	outbounds = {{
 		tag = "proxy",
-		protocol = "vless",
+		protocol = (server.protocol == "VLESS") and "vless" or "vmess",
 		settings = {
 			vnext = {
 				{
@@ -48,7 +48,7 @@ log = {
 							id = server.vmess_id,
 							alterId = tonumber(server.alter_id),
 							security = server.security,
-							flow = "xtls-rprx-splice",
+							flow = (server.protocol == "VLESS" and server.tls == "xtls") and server.flow or nil,
 							encryption = "none"
 						}
 					}
@@ -58,19 +58,20 @@ log = {
 	-- 底层传输配置
 		streamSettings = {
 			network = server.transport,
-			security = (server.tls == '1') and "xtls" or "none",
-			xtlsSettings = {allowInsecure = (server.insecure ~= "0") and true or false,serverName=server.tls_host,},
-		tcpSettings = (server.transport == "tcp") and {
-			header = {
-				type = server.tcp_guise,
-				request = {
-					path = server.http_path or {"/"},
-					headers = {
-						Host = server.http_host or {}
-					}
-				} or {}
-			}
-        } or nil,
+			security = server.tls,
+			xtlsSettings = (server.tls == "xtls") and {allowInsecure = (server.insecure ~= "0") and true or false,serverName=server.tls_host,} or nil,
+			tlsSettings = (server.tls == "tls") and {allowInsecure = (server.insecure ~= "0") and true or false,serverName=server.tls_host,} or nil,
+      tcpSettings = (server.transport == "tcp") and {
+        header = {
+          type = server.tcp_guise,
+          request = {
+            path = server.http_path or {"/"},
+            headers = {
+              Host = server.http_host or {}
+            }
+          } or {}
+        }
+      } or nil,
 			kcpSettings = (server.transport == "kcp") and {
 				mtu = tonumber(server.mtu),
 				tti = tonumber(server.tti),
