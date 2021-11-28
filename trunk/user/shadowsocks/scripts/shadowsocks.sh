@@ -9,7 +9,7 @@
 # See /LICENSE for more information.
 #
 NAME=shadowsocksr
-http_username=`nvram get http_username`
+http_username=$(nvram get http_username)
 CONFIG_FILE=/tmp/${NAME}.json
 CONFIG_UDP_FILE=/tmp/${NAME}_u.json
 CONFIG_SOCK5_FILE=/tmp/${NAME}_s.json
@@ -27,10 +27,10 @@ chinadnsng_enable_flag=0
 wan_bp_ips="/tmp/whiteip.txt"
 wan_fw_ips="/tmp/blackip.txt"
 lan_fp_ips="/tmp/lan_ip.txt"
-run_mode=`nvram get ss_run_mode`
-ss_turn=`nvram get ss_turn`
-lan_con=`nvram get lan_con`
-GLOBAL_SERVER=`nvram get global_server`
+run_mode=$(nvram get ss_run_mode)
+ss_turn=$(nvram get ss_turn)
+lan_con=$(nvram get lan_con)
+GLOBAL_SERVER=$(nvram get global_server)
 socks=""
 
 find_bin() {
@@ -55,7 +55,7 @@ gen_config_file() {
 	1) config_file=$CONFIG_UDP_FILE && local stype=$(nvram get ud_type) ;;
 	*) config_file=$CONFIG_SOCK5_FILE && local stype=$(nvram get s5_type) ;;
 	esac
-local type=$stype
+	local type=$stype
 	case "$type" in
 	ss)
 		lua /etc_ro/ss/genssconfig.lua $1 $3 >$config_file
@@ -68,22 +68,22 @@ local type=$stype
 	trojan)
 		tj_bin="/usr/bin/trojan"
 		if [ "$2" = "0" ]; then
-		lua /etc_ro/ss/gentrojanconfig.lua $1 nat 1080 >$trojan_json_file
-		sed -i 's/\\//g' $trojan_json_file
+			lua /etc_ro/ss/gentrojanconfig.lua $1 nat 1080 >$trojan_json_file
+			sed -i 's/\\//g' $trojan_json_file
 		else
-		lua /etc_ro/ss/gentrojanconfig.lua $1 client 10801 >/tmp/trojan-ssr-reudp.json
-		sed -i 's/\\//g' /tmp/trojan-ssr-reudp.json
+			lua /etc_ro/ss/gentrojanconfig.lua $1 client 10801 >/tmp/trojan-ssr-reudp.json
+			sed -i 's/\\//g' /tmp/trojan-ssr-reudp.json
 		fi
 		;;
 	v2ray)
 		v2_bin="/usr/bin/v2ray"
 		v2ray_enable=1
 		if [ "$2" = "1" ]; then
-		lua /etc_ro/ss/genv2config.lua $1 udp 1080 >/tmp/v2-ssr-reudp.json
-		sed -i 's/\\//g' /tmp/v2-ssr-reudp.json
+			lua /etc_ro/ss/genv2config.lua $1 udp 1080 >/tmp/v2-ssr-reudp.json
+			sed -i 's/\\//g' /tmp/v2-ssr-reudp.json
 		else
-		lua /etc_ro/ss/genv2config.lua $1 tcp 1080 >$v2_json_file
-		sed -i 's/\\//g' $v2_json_file
+			lua /etc_ro/ss/genv2config.lua $1 tcp 1080 >$v2_json_file
+			sed -i 's/\\//g' $v2_json_file
 		fi
 		;;
 	esac
@@ -98,9 +98,9 @@ get_arg_out() {
 }
 
 start_rules() {
-    logger -t "SS" "正在添加防火墙规则..."
-	lua /etc_ro/ss/getconfig.lua $GLOBAL_SERVER > /tmp/server.txt
-	server=`cat /tmp/server.txt` 
+	logger -t "SS" "正在添加防火墙规则..."
+	lua /etc_ro/ss/getconfig.lua $GLOBAL_SERVER >/tmp/server.txt
+	server=$(cat /tmp/server.txt)
 	cat /etc/storage/ss_ip.sh | grep -v '^!' | grep -v "^$" >$wan_fw_ips
 	cat /etc/storage/ss_wan_ip.sh | grep -v '^!' | grep -v "^$" >$wan_bp_ips
 	#resolve name
@@ -123,8 +123,8 @@ start_rules() {
 	#	ARG_UDP="-u"
 	if [ "$UDP_RELAY_SERVER" != "nil" ]; then
 		ARG_UDP="-U"
-		lua /etc_ro/ss/getconfig.lua $UDP_RELAY_SERVER > /tmp/userver.txt
-	    udp_server=`cat /tmp/userver.txt` 
+		lua /etc_ro/ss/getconfig.lua $UDP_RELAY_SERVER >/tmp/userver.txt
+		udp_server=$(cat /tmp/userver.txt)
 		udp_local_port="1080"
 	fi
 	if [ -n "$lan_ac_ips" ]; then
@@ -161,20 +161,20 @@ start_rules() {
 		proxyport="-m multiport --dports 22,53,587,465,995,993,143,80,443"
 	fi
 	/usr/bin/ss-rules \
-	-s "$server" \
-	-l "$local_port" \
-	-S "$udp_server" \
-	-L "$udp_local_port" \
-	-a "$ac_ips" \
-	-i "" \
-	-b "$wan_bp_ips" \
-	-w "$wan_fw_ips" \
-	-p "$lan_fp_ips" \
-	-G "$lan_gm_ips" \
-	-G "$lan_gm_ips" \
-	-D "$proxyport" \
-	-k "$lancon" \
-	$(get_arg_out) $gfwmode $ARG_UDP
+		-s "$server" \
+		-l "$local_port" \
+		-S "$udp_server" \
+		-L "$udp_local_port" \
+		-a "$ac_ips" \
+		-i "" \
+		-b "$wan_bp_ips" \
+		-w "$wan_fw_ips" \
+		-p "$lan_fp_ips" \
+		-G "$lan_gm_ips" \
+		-G "$lan_gm_ips" \
+		-D "$proxyport" \
+		-k "$lancon" \
+		$(get_arg_out) $gfwmode $ARG_UDP
 	return $?
 }
 
@@ -214,14 +214,14 @@ start_redir_tcp() {
 		;;
 	socks5)
 		for i in $(seq 1 $threads); do
-		lua /etc_ro/ss/gensocks.lua $GLOBAL_SERVER 1080 >/dev/null 2>&1 &
-		usleep 500000
+			lua /etc_ro/ss/gensocks.lua $GLOBAL_SERVER 1080 >/dev/null 2>&1 &
+			usleep 500000
 		done
-	    ;;
+		;;
 	esac
 	return 0
-	}
-	
+}
+
 start_redir_udp() {
 	if [ "$UDP_RELAY_SERVER" != "nil" ]; then
 		redir_udp=1
@@ -247,25 +247,32 @@ start_redir_udp() {
 			ipt2socks -U -b 0.0.0.0 -4 -s 127.0.0.1 -p 10801 -l 1080 >/dev/null 2>&1 &
 			;;
 		socks5)
-		echo "1"
-		    ;;
+			echo "1"
+			;;
 		esac
 	fi
 	return 0
+}
+ss_switch=$(nvram get backup_server)
+if [ $ss_switch != "nil" ]; then
+	switch_time=$(nvram get ss_turn_s)
+	switch_timeout=$(nvram get ss_turn_ss)
+	#/usr/bin/ssr-switch start $switch_time $switch_timeout &
+	socks="-o"
+fi
+#return $?
+
+update_chnlist() {
+	url='https://raw.github.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf'
+	data=$(curl -4sSkL --connect-timeout 10 -m 60 "$url") || {
+		echo "download failed, exit-code: $?"
+		exit 1
 	}
-	ss_switch=$(nvram get backup_server)
-	if [ $ss_switch != "nil" ]; then
-		switch_time=$(nvram get ss_turn_s)
-		switch_timeout=$(nvram get ss_turn_ss)
-		#/usr/bin/ssr-switch start $switch_time $switch_timeout &
-		socks="-o"
-	fi
-	#return $?
-
-
+	echo "$data" | awk -F/ '{print $2}' | sort | uniq >/tmp/cdn.txt
+}
 
 start_dns() {
-case "$run_mode" in
+	case "$run_mode" in
 	router)
 		echo "create china hash:net family inet hashsize 1024 maxelem 65536" >/tmp/china.ipset
 		awk '!/^$/&&!/^#/{printf("add china %s'" "'\n",$0)}' /etc/storage/chinadns/chnroute.txt >>/tmp/china.ipset
@@ -275,7 +282,8 @@ case "$run_mode" in
 		if [ $(nvram get ss_chdns) = 1 ]; then
 			chinadnsng_enable_flag=1
 			logger -t "SS" "下载cdn域名文件..."
-			wget --no-check-certificate --timeout=8 -qO - https://gitee.com/bkye/rules/raw/master/cdn.txt > /tmp/cdn.txt
+			# wget --no-check-certificate --timeout=8 -qO - https://gitee.com/bkye/rules/raw/master/cdn.txt > /tmp/cdn.txt
+			update_chnlist
 			if [ ! -f "/tmp/cdn.txt" ]; then
 				logger -t "SS" "cdn域名文件下载失败，可能是地址失效或者网络异常！可能会影响部分国内域名解析了国外的IP！"
 			else
@@ -286,12 +294,12 @@ case "$run_mode" in
 			chinadns-ng -b 0.0.0.0 -l 65353 -c $(nvram get china_dns) -t 127.0.0.1#5353 -4 china -M -m /tmp/cdn.txt >/dev/null 2>&1 &
 			sed -i '/no-resolv/d' /etc/storage/dnsmasq/dnsmasq.conf
 			sed -i '/server=127.0.0.1/d' /etc/storage/dnsmasq/dnsmasq.conf
-			cat >> /etc/storage/dnsmasq/dnsmasq.conf << EOF
+			cat >>/etc/storage/dnsmasq/dnsmasq.conf <<EOF
 no-resolv
 server=127.0.0.1#65353
 EOF
-    		fi
-	;;
+		fi
+		;;
 	gfw)
 		if [ $(nvram get pdnsd_enable) = 0 ]; then
 			dnsstr="$(nvram get tunnel_forward)"
@@ -300,7 +308,7 @@ EOF
 			ipset add gfwlist $dnsserver 2>/dev/null
 			logger -st "SS" "启动dns2tcp：5353端口..."
 			dns2tcp -L"127.0.0.1#5353" -R"$dnsstr" >/dev/null 2>&1 &
-			pdnsd_enable_flag=0	
+			pdnsd_enable_flag=0
 			logger -st "SS" "开始处理gfwlist..."
 		fi
 		;;
@@ -312,11 +320,11 @@ EOF
 		cat >>/etc/storage/dnsmasq/dnsmasq.conf <<EOF
 conf-dir=/etc/storage/dnsmasq.oversea
 EOF
-;;
+		;;
 	*)
 		ipset -N ss_spec_wan_ac hash:net 2>/dev/null
 		ipset add ss_spec_wan_ac $dnsserver 2>/dev/null
-	;;
+		;;
 	esac
 	/sbin/restart_dhcpd
 }
@@ -329,17 +337,16 @@ start_AD() {
 	else
 		logger -t "SS" "AD文件下载成功"
 		if [ -f "/tmp/adnew.conf" ]; then
-			check = `grep -wq "address=" /tmp/adnew.conf`
-	  		if [ ! -n "$check" ] ; then
-	    			cp /tmp/adnew.conf /tmp/dnsmasq.dom/ad.conf
-	  		else
-			    cat /tmp/adnew.conf | grep ^\|\|[^\*]*\^$ | sed -e 's:||:address\=\/:' -e 's:\^:/0\.0\.0\.0:' > /tmp/dnsmasq.dom/ad.conf
+			check = $(grep -wq "address=" /tmp/adnew.conf)
+			if [ ! -n "$check" ]; then
+				cp /tmp/adnew.conf /tmp/dnsmasq.dom/ad.conf
+			else
+				cat /tmp/adnew.conf | grep ^\|\|[^\*]*\^$ | sed -e 's:||:address\=\/:' -e 's:\^:/0\.0\.0\.0:' >/tmp/dnsmasq.dom/ad.conf
 			fi
 		fi
 	fi
 	rm -f /tmp/adnew.conf
 }
-
 
 # ================================= 启动 Socks5代理 ===============================
 start_local() {
@@ -386,7 +393,7 @@ rules() {
 	[ "$GLOBAL_SERVER" = "nil" ] && return 1
 	UDP_RELAY_SERVER=$(nvram get udp_relay_server)
 	if [ "$UDP_RELAY_SERVER" = "same" ]; then
-	UDP_RELAY_SERVER=$GLOBAL_SERVER
+		UDP_RELAY_SERVER=$GLOBAL_SERVER
 	fi
 	if start_rules; then
 		return 0
@@ -422,25 +429,25 @@ EOF
 }
 
 # ================================= 启动 SS ===============================
-ssp_start() { 
-    ss_enable=`nvram get ss_enable`
-if rules; then
+ssp_start() {
+	ss_enable=$(nvram get ss_enable)
+	if rules; then
 		if start_redir_tcp; then
-		start_redir_udp
-        #start_rules
-		#start_AD
-        start_dns
+			start_redir_udp
+			#start_rules
+			#start_AD
+			start_dns
 		fi
-		fi
-        start_local
-        start_watchcat
-        auto_update
-        ENABLE_SERVER=$(nvram get global_server)
-        [ "$ENABLE_SERVER" = "-1" ] && return 1
+	fi
+	start_local
+	start_watchcat
+	auto_update
+	ENABLE_SERVER=$(nvram get global_server)
+	[ "$ENABLE_SERVER" = "-1" ] && return 1
 
-        logger -t "SS" "启动成功。"
-        logger -t "SS" "内网IP控制为:$lancons"
-        nvram set check_mode=0
+	logger -t "SS" "启动成功。"
+	logger -t "SS" "内网IP控制为:$lancons"
+	nvram set check_mode=0
 }
 
 # ================================= 关闭SS ===============================
@@ -463,15 +470,13 @@ ssp_close() {
 	/sbin/restart_dhcpd
 }
 
-
-clear_iptable()
-{
+clear_iptable() {
 	s5_port=$(nvram get socks5_port)
 	iptables -t filter -D INPUT -p tcp --dport $s5_port -j ACCEPT
 	iptables -t filter -D INPUT -p tcp --dport $s5_port -j ACCEPT
 	ip6tables -t filter -D INPUT -p tcp --dport $s5_port -j ACCEPT
 	ip6tables -t filter -D INPUT -p tcp --dport $s5_port -j ACCEPT
-	
+
 }
 
 kill_process() {
@@ -494,7 +499,7 @@ kill_process() {
 		killall ssr-redir >/dev/null 2>&1
 		kill -9 "$rssredir" >/dev/null 2>&1
 	fi
-	
+
 	sslocal_process=$(pidof ss-local)
 	if [ -n "$sslocal_process" ]; then
 		logger -t "SS" "关闭ss-local进程..."
@@ -515,7 +520,7 @@ kill_process() {
 		killall kumasocks >/dev/null 2>&1
 		kill -9 "$kumasocks_process" >/dev/null 2>&1
 	fi
-	
+
 	ipt2socks_process=$(pidof ipt2socks)
 	if [ -n "$ipt2socks_process" ]; then
 		logger -t "SS" "关闭ipt2socks进程..."
@@ -536,7 +541,7 @@ kill_process() {
 		killall ssr-server >/dev/null 2>&1
 		kill -9 "$ssrs_process" >/dev/null 2>&1
 	fi
-	
+
 	cnd_process=$(pidof chinadns-ng)
 	if [ -n "$cnd_process" ]; then
 		logger -t "SS" "关闭chinadns-ng进程..."
@@ -550,7 +555,7 @@ kill_process() {
 		killall dns2tcp >/dev/null 2>&1
 		kill -9 "$dns2tcp_process" >/dev/null 2>&1
 	fi
-	
+
 	microsocks_process=$(pidof microsocks)
 	if [ -n "$microsocks_process" ]; then
 		logger -t "SS" "关闭socks5服务端进程..."
@@ -558,7 +563,6 @@ kill_process() {
 		kill -9 "$microsocks_process" >/dev/null 2>&1
 	fi
 }
-
 
 # ================================= 重启 SS ===============================
 ressp() {
@@ -595,4 +599,3 @@ reserver)
 	#exit 0
 	;;
 esac
-
